@@ -17,6 +17,8 @@
 (function(thisObj){
     
 
+    var labelArray = ["Scene", "Build", "Element", "Rig", "Transition"];
+
     var scriptName = "km-toolkit-labeler";
 
     createUI(thisObj)
@@ -34,25 +36,28 @@
     var mainGroup = win.add("group", undefined, "Main Group");
     mainGroup.orientation = 'column';
 
+    var labelPanel = mainGroup.add("panel", undefined, "Labels");
+    labelPanel.orientation = "column";
+    labelPanel.alignChildren = ["fill", "fill"];
+    var labelDD = labelPanel.add("dropdownList", undefined, labelArray);
+    labelDD.alignment = ["fill", "fill"];
+    labelDD.selection = 0;
 
-    var applyGroup = mainGroup.add("group", undefined, "Apply Group");
-    applyGroup.orientation = 'row';
-    var applyButton = applyGroup.add("button", undefined, "Apply");
-    applyButton.preferredSize = [-1,30];
-    applyButton.helpTip = "Click: Apply markers to selected layers.\rShift+Click: Apply markers to beginning of a comp."
+    var buttonGroup = mainGroup.add("group", undefined, "Label Group");
+    buttonGroup.orientation = 'row';
+    var labelButton = buttonGroup.add("button", undefined, "Label");
+    labelButton.preferredSize = [-1,30];
+    labelButton.helpTip = "Click: Apply markers to selected layers.\rShift+Click: Apply markers to beginning of a comp."
 
 
-    applyButton.onClick = function(){
+    labelButton.onClick = function(){
     try {
-        app.beginUndoGroup("What script does");
+        app.beginUndoGroup("Item Labeler");
 
-        var activeComp = app.project.activeItem;
-        var curLayerSel = activeComp.selectedLayers;
+        var labelInput = labelDD.selection.toString().toLowerCase();
 
-        if(!(activeComp && activeComp instanceof CompItem)){
-            alert("Please open a comp first")
-            return
-        }
+
+        labelComps(labelInput);
 
 
       } catch(error) {
@@ -65,6 +70,47 @@
     }
 
     
+    function getCompItems(){
+        var proj = app.project;
+        var projSelection = proj.selection;
+        var selCompItems = [];
+
+        if(proj.selection.length < 1){
+            alert("Whoops!\r\rYou don't have any project items selected. Select atleast 1 project item and try again.");
+            return;
+        }
+
+        var match = false
+
+        for(var i = 0; i<projSelection.length; i++){
+            var item = projSelection[i];
+
+            if(item && item instanceof CompItem){
+                selCompItems.push(item);
+                match = true;
+            }
+        }
+
+        if(!match){
+            alert("Whoops!\r\rYou don't have any comp items selected. Select atleast 1 comp item and try again.");
+            return
+        }
+
+        return selCompItems
+
+    }
+
+
+    function labelComps(ddSel){
+        var comps = getCompItems();
+        for(var i=0; i<comps.length; i++){
+            var compName = comps[i].name;
+            comps[i].name = ddSel + "-" + compName;
+        }
+
+        return
+    }
+
 
     win.onResizing = win.onResize = function (){
         this.layout.resize();
